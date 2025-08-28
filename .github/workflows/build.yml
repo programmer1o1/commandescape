@@ -142,7 +142,7 @@ jobs:
             ## Requirements
             
             - Fabric Loader
-            - Minecraft 1.19 - 1.21.8
+            - Minecraft 1.19.1 - 1.21.8
             
             ---
             
