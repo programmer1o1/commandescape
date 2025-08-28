@@ -1,0 +1,117 @@
+name: Build and Auto-Release
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Build all versions at once
+        run: |
+          echo "========================================="
+          echo "Building all CommandEscape versions"
+          echo "========================================="
+          
+          # Stonecutter builds all versions at once
+          ./gradlew build --no-daemon --no-configuration-cache
+          
+          echo "Build completed!"
+
+      - name: Collect built JARs
+        run: |
+          mkdir -p all-builds
+          
+          # Find all built JAR files (they already have version in name)
+          for dir in versions/*/; do
+            if [ -d "$dir/build/libs" ]; then
+              VERSION=$(basename "$dir")
+          
+              # Copy JAR files (excluding sources and dev)
+              for jar in "$dir/build/libs"/*[!-sources][!-dev].jar; do
+                if [ -f "$jar" ]; then
+                  cp "$jar" "all-builds/"
+                  echo "Copied: $(basename "$jar")"
+                fi
+              done
+            fi
+          done
+          
+          echo "JAR files collected: $(ls -1 all-builds/*.jar 2>/dev/null | wc -l)"
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: CommandEscape-all-versions
+          path: all-builds/*.jar
+          if-no-files-found: warn
+          retention-days: 30
+
+      # Auto-release on main branch only
+      - name: Delete old latest release
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+        uses: dev-drprasad/delete-tag-and-release@v1.1
+        with:
+          tag_name: latest
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true
+
+      - name: Create Latest Release
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+        uses: ncipollo/release-action@v1
+        with:
+          tag: latest
+          name: Latest Build
+          body: |
+            # CommandEscape Mod - Latest Build
+            
+            **Build Date:** ${{ github.event.head_commit.timestamp }}
+            **Commit:** ${{ github.sha }}
+            
+            ## Available Minecraft Versions
+            
+            This build includes support for Minecraft versions from 1.19 to 1.21.8
+            
+            ## Installation
+            
+            1. Download the JAR file for your Minecraft version
+            2. Place it in your `mods` folder
+            3. Make sure you have Fabric Loader installed
+            
+            ## Features
+            
+            - Type `\` before a message to send it as plain text instead of a command
+            - Allows you to send messages starting with `/` without executing them as commands
+            - Clean implementation for Minecraft 1.19+ (no Unicode characters needed)
+            
+            ## Usage
+            
+            - Type `\<message>` to escape the message
+            - Example: `\/help` will send "/help" as a chat message instead of executing the help command
+            - Example: `\/gamemode creative` will send "/gamemode creative" as text
+            
+            ---
+            *This is an automated build from the latest commit*
+          artifacts: "all-builds/*.jar"
+          allowUpdates: true
+          removeArtifacts: true
+          makeLatest: true
+          token: ${{ secrets.GITHUB_TOKEN }}

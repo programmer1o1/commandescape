@@ -1,29 +1,27 @@
 {
   "schemaVersion": 1,
-  "id": "${id}",
+  "id": "commandescape",
   "version": "${version}",
-  "name": "${name}",
-  "description": "This is an example description! Tell everyone what your mod is about!",
-  "authors": [
-    "Me!"
-  ],
+  "name": "Command Escape",
+  "description": "Use backslash to escape commands and send them as regular chat messages",
+  "authors": ["Sierra"],
   "contact": {
-    "homepage": "https://fabricmc.net/",
-    "sources": "https://github.com/FabricMC/fabric-example-mod"
+    "homepage": "https://github.com/sierra",
+    "sources": "https://github.com/sierra/commandescape"
   },
-  "license": "CC0-1.0",
-  "icon": "assets/template/icon.png",
-  "environment": "*",
+  "license": "MIT",
+  "icon": "assets/commandescape/icon.png",
+  "environment": "client",
   "entrypoints": {
-    "main": [
-      "com.example.TemplateMod"
+    "client": [
+      "hi.sierra.commandescape.CommandEscapeMod"
     ]
   },
   "mixins": [
-    "template.mixins.json"
+    "commandescape.mixins.json"
   ],
   "depends": {
-    "fabricloader": ">=0.16",
-    "minecraft": "${minecraft}"
+    "fabricloader": ">=0.14.0",
+    "minecraft": "${mc_dep}"
   }
 }
