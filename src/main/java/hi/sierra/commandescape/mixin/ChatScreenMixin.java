@@ -3,6 +3,13 @@ package hi.sierra.commandescape.mixin;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.ChatScreen;
 import net.minecraft.client.gui.widget.TextFieldWidget;
+//? if <1.19.3 {
+import net.minecraft.network.packet.c2s.play.ChatMessageC2SPacket;
+import net.minecraft.network.message.MessageSignatureData;
+import net.minecraft.network.message.LastSeenMessageList;
+import java.time.Instant;
+import java.util.Optional;
+//?}
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -29,7 +36,22 @@ public class ChatScreenMixin {
 
                 MinecraftClient client = MinecraftClient.getInstance();
                 if (client.player != null && client.getNetworkHandler() != null) {
-                    client.getNetworkHandler().sendChatMessage(message);
+                    //? if >=1.19.3 {
+                    /*client.getNetworkHandler().sendChatMessage(message);
+                    *///?} else {
+
+                    // Create unsigned message packet
+                    ChatMessageC2SPacket packet = new ChatMessageC2SPacket(
+                            message,
+                            Instant.now(),
+                            0L,
+                            MessageSignatureData.EMPTY,
+                            false,
+                            new LastSeenMessageList.Acknowledgment(LastSeenMessageList.EMPTY, Optional.empty())
+                    );
+
+                    client.getNetworkHandler().sendPacket(packet);
+                    //?}
                 }
 
                 // Close chat screen
